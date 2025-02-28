@@ -1,16 +1,57 @@
 import discord
 from discord.ext import commands
+
 intents = discord.Intents.default()
 intents.message_content = True
-ağaç_ekme_sayacı = 0
+
+join_dates = {}
+
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 @bot.event
 async def on_ready():
      print(f'{bot.user} olarak giriş yaptık')
 
+@bot.event
+async def on_member_join(member):
+    join_dates[member.id] = member.joined_at.strftime('%Y-%m-%d %H:%M:%S')
+    print(f'{member.name} katıldı!')
+
+@bot.event
+async def on_member_remove(member):
+    print(f'{member.name} ayrıldı.')
+    channel = bot.get_channel(1201198143992246342)  # Mesaj göndermek istediğiniz kanalın ID'sini girin
+    if channel:
+        await channel.send(f'{member.name} ayrıldı.')
+
 @bot.command()
 async def merhaba(ctx):
     await ctx.send(f'Merhaba {bot.user}! Ben bir botum!')
 
-bot.run("Token")    
+@bot.command()
+async def banana(ctx):
+     await ctx.send(f'ulala BANANAAAAA')
+
+@bot.command()
+async def Hakkında(ctx):
+     await ctx.send(f'Ben kötü adamlar için çalışan kötü bir minionum ve sizin discord serverınızı ele geçirmek için geldim.')
+
+@bot.command()
+async def topla(ctx, *args):
+    try:
+        numbers = list(map(int, args))
+        result = sum(numbers)
+        await ctx.send(f'Sonuç: {result}')
+    except ValueError:
+        await ctx.send('Lütfen sadece sayı giriniz')
+
+
+
+@bot.command()
+async def katilma_tarihi(ctx, member: discord.Member = None):
+    if member is None:
+        member = ctx.author
+    join_date = join_dates.get(member.id, 'Bilinmiyor')
+    await ctx.send(f'{member.name} kullanıcısının katılma tarihi: {join_date}')
+
+bot.run("token")    
