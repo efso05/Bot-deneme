@@ -1,8 +1,11 @@
 import discord
 from discord.ext import commands
+import re
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.messages = True
+intents.guilds = True
 
 join_dates = {}
 
@@ -23,6 +26,26 @@ async def on_member_remove(member):
     channel = bot.get_channel(1201198143992246342)  # Mesaj göndermek istediğiniz kanalın ID'sini girin
     if channel:
         await channel.send(f'{member.name} ayrıldı.')
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+
+    if contains_link(message.content):
+        await message.channel.send(f"{message.author.mention} bağlantı paylaşmak yasaktır!")
+        await ban_user(message.author)
+        return
+
+    await bot.process_commands(message)
+
+def contains_link(message):
+    link_pattern = re.compile(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
+    return re.search(link_pattern, message) is not None
+
+async def ban_user(user):
+    guild = user.guild
+    await guild.ban(user, reason="Bağlantı paylaşmak yasaktır")
 
 @bot.command()
 async def merhaba(ctx):
@@ -54,4 +77,23 @@ async def katilma_tarihi(ctx, member: discord.Member = None):
     join_date = join_dates.get(member.id, 'Bilinmiyor')
     await ctx.send(f'{member.name} kullanıcısının katılma tarihi: {join_date}')
 
-bot.run("token")    
+@bot.command()  # Kullanıcının banlanma haklarına sahip olmasını gerektiren "ban" komutunun tanımlanması
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, member: discord.Member = None):
+    if member:  # Komutun banlanması gereken kullanıcıyı belirtip belirtmediğinin kontrol edilmesi
+        if ctx.author.top_role <= member.top_role:
+            await ctx.send("Eşit veya daha yüksek rütbeli bir kullanıcıyı yasaklamak mümkün değildir!")
+        else:
+            await ctx.guild.ban(member)  # Bir kullanıcıyı sunucudan banlama
+            await ctx.send(f" Kullanıcı {member.name} banlandı.")  # Başarılı bir banlama hakkında mesaj gönderme
+    else:
+        await ctx.send("Bu komut banlamak istediğiniz kullanıcıyı işaret etmelidir. Örneğin: `!ban @user`")
+
+@ban.error  # "ban" komutu için bir hata işleyicisi tanımlayın
+async def ban_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("Bu komutu çalıştırmak için yeterli izniniz yok.")  # Kullanıcıyı erişim hakları hatası hakkında bilgilendiren bir mesaj gönderme
+    elif isinstance(error, commands.MemberNotFound):
+        await ctx.send("Kullanıcı bulunamadı.")  # Belirtilen kullanıcı bulunamazsa bir hata mesajı gönderme
+
+bot.run("Token")    
