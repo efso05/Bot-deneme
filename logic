@@ -48,6 +48,13 @@ class Pokemon:
             base_hp = data['stats'][0]['base_stat']
             return base_hp + (self.level - 1) * 10  # Her levelde HP'yi artır
         return 0
+    
+    async def attack(self):
+        data = await self._fetch_pokemon_data()
+        if data:
+            base_attack = data['stats'][1]['base_stat']
+            return base_attack + (self.level - 1) * 10  # Her levelde HP'yi artır
+        return 0
 
     async def feed(self):
         self.feed_count += 1
@@ -58,9 +65,11 @@ class Pokemon:
 
     async def stats(self):
         hp = await self.hp()  # self.hp() metodunu çağırarak can bilgisini al
+        attack = await self.attack()
         return (
             f"Pokémon: {self.name}\n"
             f"Level: {self.level}\n"
             f"Beslenme sayısı: {self.feed_count}\n"
-            f"Can (HP): {hp}"
+            f"Can (HP): {hp}\n"
+            f"Atak: {attack}"
         )
