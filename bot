@@ -4,7 +4,7 @@ import re
 import requests
 from logic import Pokemon
 
-API_KEY = '0a8bbfe3b95744d1b55134928250703'
+API_KEY = 'YOUR_API_KEY'
 
 intents = discord.Intents.default()
 intents.message_content = True
